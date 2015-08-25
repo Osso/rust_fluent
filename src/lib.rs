@@ -12,11 +12,7 @@ mod test {
         let mut object = HashMap::new();
         object.insert("key", "value");
 
-        let fluentd = tcp::Fluentd {
-            address: "0.0.0.0:24224",
-            tag: "foo",
-        };
-
-        fluentd.write(&object);
+        let mut fluentd = tcp::Fluentd::new("0.0.0.0:24224").unwrap();
+        fluentd.write("foo", &object).unwrap();
     }
 }

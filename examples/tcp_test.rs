@@ -8,10 +8,6 @@ fn main() {
     let mut obj: HashMap<String, String> = HashMap::new();
     obj.insert("key".to_string(), "value".to_string());
 
-    let fluentd = tcp::Fluentd {
-      address: "0.0.0.0:24224",
-      tag: "foo",
-    };
-
-    fluentd.write(&obj);
+    let mut fluentd = tcp::Fluentd::new("0.0.0.0:24224").unwrap();
+    fluentd.write("foo", &obj).unwrap();
 }

@@ -9,9 +9,9 @@ use rustc_serialize::Encodable;
 
 extern crate time;
 
-pub struct Fluentd<'a, A: net::ToSocketAddrs> {
+pub struct Fluentd<A: net::ToSocketAddrs> {
     pub address: A,
-    pub tag: &'a str,
+    pub stream: net::TcpStream,
 }
 
 #[derive(Debug)]
@@ -33,17 +33,23 @@ impl From<json::EncoderError> for FluentError {
 }
 
 
-impl <'a, A: net::ToSocketAddrs> Fluentd<'a, A> {
-    pub fn write<B: Encodable> (&self, object: &B) -> Result<(), FluentError> {
-        let tag = try!(json::encode(&self.tag));
+impl <A: net::ToSocketAddrs> Fluentd<A> {
+    pub fn new<'a>(address: A) -> Result<Fluentd<A>, FluentError> {
+        let stream = net::TcpStream::connect(&address).unwrap();
+        let client = Fluentd {
+            address: address,
+            stream: stream,
+        };
+        Ok(client)
+    }
+
+    pub fn write<'a, B: Encodable> (&mut self, tag: &'a str, object: &B) -> Result<(), FluentError> {
+        let tag = try!(json::encode(&tag));
         let now = time::now();
         let record = try!(json::encode(object));
         let message = format!("[{},{},{}]", tag, now.to_timespec().sec, record);
 
-        let mut stream = try!(net::TcpStream::connect(&self.address));
-        let _ = stream.write(&message.into_bytes());
-        drop(stream);
-
+        let _ = self.stream.write(&message.into_bytes());
         Ok(())
     }
 }
